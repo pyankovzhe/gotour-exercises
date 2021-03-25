@@ -1,7 +1,6 @@
 package wordcount
 
 import (
-	"reflect"
 	"testing"
 )
 
@@ -33,14 +32,33 @@ func TestWordCount(t *testing.T) {
 				"much":  1,
 			},
 		},
+		{
+			name:   "with empty string",
+			input:  "",
+			output: map[string]int{},
+		},
 	}
 
 	for _, tc := range validTestCases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := Count(tc.input)
-			if !reflect.DeepEqual(got, tc.output) {
+			if !mapEqual(got, tc.output) {
 				t.Errorf("Expected %v, got %v", tc.output, got)
 			}
 		})
 	}
+}
+
+func mapEqual(m1, m2 map[string]int) bool {
+	if len(m1) != len(m2) {
+		return false
+	}
+
+	for k, v := range m1 {
+		if m2[k] != v {
+			return false
+		}
+	}
+
+	return true
 }

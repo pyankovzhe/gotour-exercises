@@ -106,39 +106,3 @@ func (l *list) Remove(el *ListElement) {
 
 	l.size--
 }
-
-// func main() {
-// 	list := NewList()
-// 	fmt.Println(list)
-// 	fmt.Println(list.Len())
-
-// 	elements := []struct {
-// 		name  string
-// 		Value string
-// 	}{
-// 		{name: "el1", Value: "foo"},
-// 		{name: "el2", Value: "boo"},
-// 		{name: "el3", Value: "bar"},
-// 		{name: "el4", Value: "bar4"},
-// 	}
-
-// 	for _, el := range elements[:2] {
-// 		newEl := list.PushFront(el)
-// 		fmt.Printf("new pushed el: %v\n", newEl.Value)
-// 	}
-
-// 	penultEl := list.PushBack(elements[len(elements)-2])
-// 	fmt.Printf("new pushed last el: %v\n", penultEl.Value)
-// 	lastEl := list.PushBack(elements[len(elements)-1])
-// 	fmt.Printf("new pushed last el: %v\n", lastEl)
-// 	fmt.Printf("list: %v\n", list)
-
-// 	list.Remove(penultEl)
-// 	fmt.Printf("list: %v\n", list)
-// 	fmt.Println(list.Len())
-// 	fmt.Printf("last el: %v\n", lastEl.Prev != penultEl)
-// 	list.Remove(lastEl)
-// 	fmt.Println(list.Len())
-
-// 	fmt.Printf("list values: %v\n", list.Values())
-// }

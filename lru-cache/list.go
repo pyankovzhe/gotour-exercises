@@ -6,7 +6,6 @@ type List interface {
 	Last() *ListElement
 	PushFront(v interface{}) *ListElement
 	PushBack(v interface{}) *ListElement
-	Values() []interface{}
 	Remove(el *ListElement)
 	MoveToFront(i *ListElement)
 }
@@ -82,15 +81,6 @@ func (l *list) MoveToFront(el *ListElement) {
 	l.first.Prev = el
 	l.first = el
 	el.Prev = nil
-}
-
-func (l list) Values() []interface{} {
-	values := make([]interface{}, l.size, l.size)
-	for i, el := 0, l.first; el != nil; i, el = i+1, el.Next {
-		values[i] = el.Value
-	}
-
-	return values
 }
 
 func (l *list) Remove(el *ListElement) {

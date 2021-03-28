@@ -52,5 +52,5 @@ func (c lruCache) Get(key Key) (interface{}, bool) {
 }
 
 func (c *lruCache) Clear() {
-	// TODO: implement with O(1) complexity
+	// TODO: implement
 }

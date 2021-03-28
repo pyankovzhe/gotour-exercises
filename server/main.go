@@ -8,8 +8,17 @@ import (
 	"sync"
 )
 
+const (
+	PORT = "8000"
+	HOST = "localhost"
+)
+
 var mu sync.Mutex
 var count int
+
+func init() {
+	log.Printf("Server is running on %s", fmt.Sprintf("%s:%s", HOST, PORT))
+}
 
 type user struct {
 	Name  string `json:"name"`
@@ -25,9 +34,6 @@ func metrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUsers(w http.ResponseWriter, req *http.Request) {
-	mu.Lock()
-	count++
-	mu.Unlock()
 
 	users := []user{
 		{Name: "User", Email: "user@test.com"},
@@ -38,9 +44,6 @@ func getUsers(w http.ResponseWriter, req *http.Request) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	mu.Lock()
-	count++
-	mu.Unlock()
 	fmt.Fprintf(w, "%s %s %s\n", r.Method, r.URL, r.Proto)
 	for k, v := range r.Header {
 		fmt.Fprintf(w, "Header[%q] = %q\n", k, v)
@@ -56,9 +59,26 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func withCounter(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		count++
+		mu.Unlock()
+		h(w, r)
+	}
+}
+
+func withLogRequest(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s\n", r.Method, r.URL, r.Proto)
+		h(w, r)
+	}
+}
+
 func main() {
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/metrics", metrics)
-	http.HandleFunc("/users", getUsers)
-	log.Fatal(http.ListenAndServe("localhost:8000", nil))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", withLogRequest(withCounter(handler)))
+	mux.HandleFunc("/users", withLogRequest(withCounter(getUsers)))
+	mux.HandleFunc("/metrics", metrics)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%s", HOST, PORT), mux))
 }

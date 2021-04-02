@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"sync"
-	"time"
 )
 
 type Fetcher interface {
@@ -20,7 +19,6 @@ type SafeCache struct {
 
 func (c *SafeCache) Insert(url string, body string) {
 	c.mu.Lock()
-	fmt.Printf("!!!!! %v \n", c.v)
 	c.v[url] = body
 	c.mu.Unlock()
 }
@@ -30,10 +28,8 @@ func (c *SafeCache) Get(url string) (string, bool) {
 	defer c.mu.Unlock()
 
 	if v, ok := c.v[url]; ok {
-		fmt.Printf("In cache %v, %v", v, ok)
 		return v, ok
 	} else {
-		fmt.Printf("In cache empty, %v, %v\n", v, ok)
 		return "", false
 	}
 }
@@ -43,29 +39,21 @@ var Cache = &SafeCache{v: make(map[string]string)}
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
 func Crawl(url string, depth int, fetcher Fetcher) {
-	// TODO: Fetch URLs in parallel.
-	// TODO: Don't fetch the same URL twice.
-	// This implementation doesn't do either:
-	ch := make(chan map[string]string)
-	go crawlUrl(url, depth, fetcher, ch)
-
-	timeout := time.NewTimer(10 * time.Second)
-	select {
-	case fetchedUrl := <-ch:
-		for k, v := range fetchedUrl {
-			fmt.Printf("found: %s %q\n", k, v)
-		}
-	case <-timeout.C:
-		fmt.Println("time out")
-	}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go crawlUrl(url, depth, fetcher, wg)
+	wg.Wait()
 }
 
-func crawlUrl(url string, depth int, fetcher Fetcher, ch chan map[string]string) {
+func crawlUrl(url string, depth int, fetcher Fetcher, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	if depth <= 0 {
 		return
 	}
 
-	fmt.Printf("Cache: %v\n", Cache)
+	fmt.Printf("Processing url %s\n", url)
+
 	if v, ok := Cache.Get(url); ok {
 		fmt.Printf("found cached url: %s %q\n", url, v)
 	}
@@ -76,10 +64,10 @@ func crawlUrl(url string, depth int, fetcher Fetcher, ch chan map[string]string)
 		return
 	}
 	Cache.Insert(url, body)
-	ch <- map[string]string{url: body}
 
 	for _, u := range urls {
-		go crawlUrl(u, depth-1, fetcher, ch)
+		wg.Add(1)
+		go crawlUrl(u, depth-1, fetcher, wg)
 	}
 
 	return

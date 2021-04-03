@@ -13,7 +13,7 @@ type Fetcher interface {
 
 // Save cache for fetched urls
 type SafeCache struct {
-	mu sync.Mutex
+	mu sync.RWMutex
 	v  map[string]string
 }
 
@@ -24,8 +24,8 @@ func (c *SafeCache) Insert(url string, body string) {
 }
 
 func (c *SafeCache) Get(url string) (string, bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	if v, ok := c.v[url]; ok {
 		return v, ok

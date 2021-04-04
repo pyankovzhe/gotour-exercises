@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -22,13 +21,10 @@ type writeOp struct {
 func main() {
 	var readOps uint64
 	var writeOps uint64
-	var wg sync.WaitGroup
-
 	reads := make(chan readOp)
 	writes := make(chan writeOp)
 
 	go func() {
-		wg.Add(1)
 		var state = make(map[int]int)
 
 		for {
@@ -42,8 +38,7 @@ func main() {
 		}
 	}()
 
-	for r := 0; r < 25; r++ {
-		wg.Add(1)
+	for r := 0; r < 100; r++ {
 		go func() {
 			for {
 				read := readOp{
@@ -52,16 +47,14 @@ func main() {
 				}
 
 				reads <- read
-				fmt.Printf("Read response: %d", <-read.resp)
+				<-read.resp
 				atomic.AddUint64(&readOps, 1)
 				time.Sleep(time.Millisecond)
 			}
-			wg.Done()
 		}()
 	}
 
 	for w := 0; w < 10; w++ {
-		wg.Add(1)
 		go func() {
 			for {
 				write := writeOp{
@@ -71,16 +64,14 @@ func main() {
 				}
 
 				writes <- write
-				fmt.Printf("Was written? %b", <-write.resp)
+				<-write.resp
 				atomic.AddUint64(&writeOps, 1)
 				time.Sleep(time.Millisecond)
 			}
-			wg.Done()
 		}()
 	}
 
-	wg.Wait()
-
+	time.Sleep(time.Second)
 	readOpsFinal := atomic.LoadUint64(&readOps)
 	fmt.Println("readOps:", readOpsFinal)
 	writeOpsFinal := atomic.LoadUint64(&writeOps)
